@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: dataleague
+  name: nakama
+  labels:
+    deployment: nakama
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: nakama
+  template:
+    metadata:
+      labels:
+        app: nakama
+      annotations:
+        timestamp: "{{ .Values.timestamp }}"
+    spec:
+      initContainers:
+      - name: init-mydb
+        image: busybox:latest
+        command: ['sh', '-c', 'until nc -vz database 26257; do echo "Waiting for cockroach db"; sleep 2; done;']
+      containers:
+        - image: "{{- .Values.nakama.image -}}"
+          name: nakama
+          imagePullPolicy: Always
+          command:
+          - "/bin/sh"
+          - "-ecx"
+          - >
+            ./nakama migrate up --database.address $(DATABASE_ADDRESS) &&
+            exec ./nakama --database.address $(DATABASE_ADDRESS)
+          env:
+            - name: "DATABASE_ADDRESS"
+              value: "root@database:26257"
+            - name: "DISCORD_TOKEN"
+              value: "{{- .Values.discord.bot.token -}}"
+            - name: "DISCORD_GUILD_ID"
+              value: "{{- .Values.discord.guildID -}}"
+            - name: "DISCORD_ANNOUNCEMENTS_MATCH_MAKER_CHANNEL_ID"
+              value: "{{- .Values.discord.announcements.matchMakerChannelID -}}"
+            - name: "DISCORD_ANNOUNCEMENTS_CHALLENGE_CHANNEL_ID"
+              value: "{{- .Values.discord.announcements.challengeChannelID -}}"
+            - name: "DISCORD_ANNOUNCEMENTS_RESULTS_CHANNEL_ID"
+              value: "{{- .Values.discord.announcements.resultsChannelID -}}"
+            - name: "DISCORD_DRAFTS_CATEGORY_ID"
+              value: "{{- .Values.discord.drafts.categoryID -}}"
+          ports:
+            - containerPort: 7350
+              name: nakama-api
+          resources:
+            requests:
+              memory: "512Mi"
+            limits:
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 7350
+            initialDelaySeconds: 20
+            periodSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 7350
+            initialDelaySeconds: 20
+            periodSeconds: 3

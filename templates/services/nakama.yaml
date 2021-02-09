@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: dataleague
+  name: database
+  labels:
+    service: database
+spec:
+  clusterIP: "None"
+  ports:
+  - port: 26257
+    targetPort: 26257
+    name: database-grpc
+  - port: 8080
+    targetPort: 8080
+    name: database-http
+  selector:
+    app: database
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: dataleague
+  name: nakama
+  labels:
+    service: nakama
+spec:
+  selector:
+    app: nakama
+  type: ClusterIP
+  ports:
+  - port: 7349
+    targetPort: 7349
+    name: nakama-grpc
+  - port: 7350
+    targetPort: 7350
+    name: nakama-api
+  - port: 7351
+    targetPort: 7351
+    name: nakama-http

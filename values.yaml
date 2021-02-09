@@ -1,0 +1,22 @@
+discord:
+  announcements:
+    challengeChannelID: ""
+    matchMakerChannelID: ""
+    resultsChannelID: ""
+  drafts:
+    categoryID: ""
+  guildID: ""
+  bot:
+    token: ""
+
+nakama:
+  image: "localhost:32000/nakama-dev:dkozlov"
+
+micro:
+  image: "localhost:32000/micro-dev:dkozlov"
+
+openmatch:
+  director:
+    image: "localhost:32000/director-dev:1"
+  matchfunction:
+    image: "localhost:32000/matchfunction-dev:1"

@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: dataleague
+  name: micro
+  labels:
+    deployment: micro
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: micro
+  template:
+    metadata:
+      labels:
+        app: micro
+      annotations:
+        timestamp: "{{ .Values.timestamp }}"
+    spec:
+      initContainers:
+      - name: wait-nakama-grpc-api
+        image: busybox:latest
+        command: ['sh', '-c', 'until nc -vz nakama.dataleague.svc.cluster.local 7349; do echo "Waiting for Nakama gRPC API"; sleep 2; done;']
+     # TODO: Probably need to wait nakama in the source code implement grpc server for director to make it possible to wait for it and execute specific match-profiles directly
+     #- name: waitdirector
+     #   image: busybox:latest
+     #   command: ['sh', '-c', 'until nc -vz director.dataleague.svc.cluster.local 50502; do echo "Waiting for OM function"; sleep 2; done;']
+      - name: waitmatchfunction
+        image: busybox:latest
+        command: ['sh', '-c', 'until nc -vz matchfunction.dataleague.svc.cluster.local 50502; do echo "Waiting for OM function"; sleep 2; done;']
+      containers:
+        - image: "{{- .Values.micro.image -}}"
+          name: micro
+          imagePullPolicy: Always
+          command:
+          - "/bin/sh"
+          - "-ecx"
+          - "exec ./micro bot --inputs=discord --discord_token={{- .Values.discord.bot.token -}}"
+          resources:
+            requests:
+              memory: "512Mi"
+            limits:
+              memory: "512Mi"

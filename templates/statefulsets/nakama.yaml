@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: dataleague
+  name: database
+  labels:
+    statefulset: database
+spec:
+  serviceName: "database"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+  template:
+    metadata:
+      labels:
+        app: database
+    spec:
+    # volumes:
+    #  - name: database-vol
+    #    emptyDir:
+    #      medium: "Memory"
+      containers:
+        - name: cockroachdb
+          image: cockroachdb/cockroach:v20.1.3
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 26257
+            name: grpc
+          - containerPort: 8080
+            name: http
+          volumeMounts:
+          - name: database-vol
+            mountPath: /data
+          resources:
+            requests:
+              memory: "512Mi"
+            limits:
+              memory: "512Mi"
+          livenessProbe:
+            httpGet:
+              path: "/health"
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: "/health?ready=1"
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 2
+          command:
+          - "/bin/bash"
+          - "-ecx"
+          - >
+            exec /cockroach/cockroach start
+            --store=path=/data,size=50GiB
+            --logtostderr=WARNING --no-color
+            --insecure
+            --advertise-host $(hostname -f)
+            --http-host 0.0.0.0
+  volumeClaimTemplates:
+  - metadata:
+      name: database-vol
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 3Gi
+  updateStrategy:
+    type: RollingUpdate

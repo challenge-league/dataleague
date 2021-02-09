@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: matchfunction
+  namespace: dataleague
+  labels:
+    component: matchfunction
+spec:
+  replicas: 1
+  revisionHistoryLimit: 0
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: matchfunction
+  template:
+    metadata:
+      labels:
+        app: matchfunction
+      annotations:
+        timestamp: "{{ .Values.timestamp }}"
+    spec:
+      initContainers:
+      - name: wait-open-match-query
+        image: busybox:latest
+        command: ['sh', '-c', 'until nc -vz open-match-query.open-match.svc.cluster.local 50503; do echo "Waiting for cockroach db"; sleep 2; done;']
+      containers:
+      - name: matchfunction
+        image:  "{{- .Values.openmatch.matchfunction.image -}}"
+        imagePullPolicy: Always
+        ports:
+        - name: grpc
+          containerPort: 50502
