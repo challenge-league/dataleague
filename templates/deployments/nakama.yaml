@@ -40,6 +40,8 @@ spec:
           env:
             - name: "DATABASE_ADDRESS"
               value: "root@database:26257"
+            - name: "RESULT_CONSENSUS_RATIO"
+              value: "{{- .Values.nakama.resultConsensusRatio -}}"
             - name: "DISCORD_TOKEN"
               value: "{{- .Values.discord.bot.token -}}"
             - name: "DISCORD_GUILD_ID"

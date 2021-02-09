@@ -11,6 +11,7 @@ discord:
 
 nakama:
   image: "localhost:32000/nakama-dev:dkozlov"
+  resultConsensusRatio: "0.51"
 
 micro:
   image: "localhost:32000/micro-dev:dkozlov"
